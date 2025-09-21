@@ -4,6 +4,9 @@ from accounts.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(allow_blank=False)
+    last_name = serializers.CharField(allow_blank=False)
+
     class Meta:
         model = User
         fields = ("id", "username", "email", "first_name", "last_name", "is_active", "is_staff")
