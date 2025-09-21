@@ -1,45 +1,65 @@
-import { authed, pub } from "../orpc";
-import { CredentialSchema, TokenSchema } from "../schemas/auth";
-import { NewUserSchema, UserSchema } from "../schemas/user";
+"use server";
 
-export const signup = pub
+import { PrivateUsersApi } from "@/api/users/api.server";
+import { TokenLoginPayloadSchema, TokenSchema } from "@/api/users/schema";
+import { clientWithErrors, remoteApiHandler } from "@/lib/orpc-errors";
+import { decodeAccessToken, decodeRefreshToken } from "@/services/jwt";
+import { onSuccess } from "@orpc/server";
+import { cookies } from "next/headers";
+import { redirect, RedirectType } from "next/navigation";
+
+const ACCESS_TOKEN_KEY = "access";
+const REFRESH_TOKEN_KEY = "refresh";
+const REDIRECT_TO_ON_LOGOUT = "/login";
+
+export const login = clientWithErrors
   .route({
     method: "POST",
-    path: "/auth/signup",
-    summary: "Sign up a new user",
-    tags: ["Authentication"],
+    path: "/auth/login",
   })
-  .input(NewUserSchema)
-  .output(UserSchema)
-  .handler(async ({ input, context }) => {
-    return {
-      id: "28aa6286-48e9-4f23-adea-3486c86acd55",
-      email: input.email,
-      name: input.name,
-    };
-  });
-
-export const signin = pub
-  .route({
-    method: "POST",
-    path: "/auth/signin",
-    summary: "Sign in a user",
-    tags: ["Authentication"],
-  })
-  .input(CredentialSchema)
+  .input(TokenLoginPayloadSchema)
   .output(TokenSchema)
-  .handler(async ({ input, context }) => {
-    return { token: "token" };
+  .handler(async ({ input, errors }) => {
+    return remoteApiHandler(PrivateUsersApi.tokenLogin(input), { errors });
+  })
+  .actionable({
+    interceptors: [
+      onSuccess(async (output) => {
+        const { access, refresh } = output;
+        const cookieStore = await cookies();
+        const accessToken = decodeAccessToken(access)!;
+        const refreshToken = decodeRefreshToken(refresh)!;
+        const accessMaxAge = accessToken.exp - accessToken.iat;
+        const refreshMaxAge = refreshToken.exp - refreshToken.iat;
+        cookieStore.set(ACCESS_TOKEN_KEY, access, {
+          httpOnly: true,
+          maxAge: accessMaxAge,
+        });
+        cookieStore.set(REFRESH_TOKEN_KEY, refresh, {
+          httpOnly: true,
+          maxAge: refreshMaxAge,
+        });
+        redirect("/", RedirectType.replace);
+      }),
+    ],
   });
 
-export const me = authed
+export const logout = clientWithErrors
   .route({
-    method: "GET",
-    path: "/auth/me",
-    summary: "Get the current user",
-    tags: ["Authentication"],
+    method: "POST",
+    path: "/auth/logout",
   })
-  .output(UserSchema)
-  .handler(async ({ input, context }) => {
-    return context.user;
+  .handler(async ({ errors }) => {
+    // todo: handle no refresh token case
+    return remoteApiHandler(PrivateUsersApi.tokenLogout(), { errors });
+  })
+  .actionable({
+    interceptors: [
+      onSuccess(async () => {
+        const cookieStore = await cookies();
+        cookieStore.delete(ACCESS_TOKEN_KEY);
+        cookieStore.delete(REFRESH_TOKEN_KEY);
+        redirect(REDIRECT_TO_ON_LOGOUT);
+      }),
+    ],
   });

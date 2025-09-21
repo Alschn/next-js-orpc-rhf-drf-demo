@@ -6,7 +6,7 @@ export interface TokenUser {
   email: string;
 }
 
-interface AccessToken {
+export interface AccessToken {
   token_type: "access";
   exp: number;
   iat: number;
@@ -20,7 +20,7 @@ interface AccessToken {
   iss: string;
 }
 
-interface RefreshToken extends Omit<AccessToken, "token_type"> {
+export interface RefreshToken extends Omit<AccessToken, "token_type"> {
   token_type: "refresh";
 }
 

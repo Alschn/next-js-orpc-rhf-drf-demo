@@ -1,17 +1,14 @@
-import { me, signin, signup } from "./auth";
-import { createPlanet, findPlanet, listPlanets, updatePlanet } from "./planet";
+import { login, logout } from "./auth";
+import { listUsers, retrieveUser, updateUser } from "./users";
 
 export const router = {
   auth: {
-    signup,
-    signin,
-    me,
+    login,
+    logout,
   },
-
-  planet: {
-    list: listPlanets,
-    create: createPlanet,
-    find: findPlanet,
-    update: updatePlanet,
+  users: {
+    list: listUsers,
+    retrieve: retrieveUser,
+    update: updateUser,
   },
 };

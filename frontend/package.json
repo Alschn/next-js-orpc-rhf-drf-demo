@@ -35,6 +35,7 @@
     "@next/bundle-analyzer": "^15.5.3",
     "@t3-oss/env-nextjs": "^0.13.8",
     "@tanstack/react-query-devtools": "^5.89.0",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.12.2",
     "jsonwebtoken": "^9.0.2",
     "react-hook-form": "^7.63.0"
