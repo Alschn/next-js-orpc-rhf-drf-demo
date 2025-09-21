@@ -55,7 +55,7 @@ jobs:
       - name: Install dependencies
         if: steps.cache-poetry.outputs.cache-hit != 'true'
         run: |
-          poetry install
+          poetry install --no-root
 
       - name: Django tests
         run: |
