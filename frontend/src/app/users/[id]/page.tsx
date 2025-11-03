@@ -1,4 +1,5 @@
 import { UserForm } from "@/components/user-form";
+import { client } from "@/lib/orpc";
 import { safe } from "@orpc/server";
 
 interface UserPageProps {
@@ -12,9 +13,7 @@ export default async function UserPage({ params }: UserPageProps) {
     return <div>Invalid user ID</div>;
   }
 
-  const { error, data } = await safe(
-    globalThis.$client!.users.retrieve({ id: userId }),
-  );
+  const { error, data } = await safe(client.users.retrieve({ id: userId }));
 
   if (error) {
     return <pre>{JSON.stringify(error, null, 2)}</pre>;
