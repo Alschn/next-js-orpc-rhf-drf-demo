@@ -4,22 +4,23 @@ import { ORPCErrorConstructorMap, os } from "@orpc/server";
 import { AxiosResponse, isAxiosError } from "axios";
 import z from "zod";
 
-// todo: figure out most convenient way to handle those errors client-side,
-// todo: figure out why errors do not really work with useServerAction...
-
 const StandardizedErrorSchema = z.object({
   code: z.string(),
   detail: z.string(),
   attr: z.string().nullable().optional(),
 });
 
+const RemoteServerErrorSchema = z.object({
+  status: z.number().min(100).max(599),
+  type: z.enum(Object.values(ApiErrorTypes)),
+  errors: z.array(StandardizedErrorSchema).min(1),
+});
+
+export type RemoteServerErrorData = z.infer<typeof RemoteServerErrorSchema>;
+
 export const clientWithErrors = os.errors({
   REMOTE_SERVER_ERROR: {
-    data: z.object({
-      status: z.number().min(100).max(599),
-      type: z.enum(Object.values(ApiErrorTypes)),
-      errors: z.array(StandardizedErrorSchema).min(1),
-    }),
+    data: RemoteServerErrorSchema,
   },
 });
 
