@@ -1,12 +1,14 @@
 "use client";
 
 import { TokenLoginPayloadSchema } from "@/api/users/schema";
-import { useServerAction } from "@orpc/react/hooks";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import z from "zod";
+import { handleRHFActionError } from "@/lib/form-errors";
 import { login } from "@/routers/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { onError } from "@orpc/client";
+import { useServerAction } from "@orpc/react/hooks";
+import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
+import z from "zod";
 
 type LoginFormData = z.infer<typeof TokenLoginPayloadSchema>;
 
@@ -19,12 +21,7 @@ const LoginButton = ({ isLoading }: { isLoading: boolean }) => {
 };
 
 export const LoginForm = () => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setError,
-  } = useForm<LoginFormData>({
+  const form = useForm<LoginFormData>({
     defaultValues: {
       username: "",
       password: "",
@@ -35,8 +32,22 @@ export const LoginForm = () => {
   const { execute, isPending: isLoading } = useServerAction(login, {
     interceptors: [
       onError((error) => {
-        // todo: figure out why this error is not type-safe...
-        setError("root", { type: "server", message: error.message });
+        handleRHFActionError(error, form, {
+          onUndefinedError: (err) => {
+            console.error("Unexpected error:", err.message);
+            toast.error("An unexpected error occurred.", {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          },
+          onDefinedError: (error) => {
+            if (error.type === "validation_error") return;
+            toast.error(error.errors.map((e) => e.detail).join(", "), {
+              position: "top-right",
+              autoClose: 3000,
+            });
+          },
+        });
       }),
     ],
   });
@@ -45,10 +56,12 @@ export const LoginForm = () => {
     execute(data);
   };
 
+  const { errors } = form.formState;
+
   return (
     <div>
       <h2>Login</h2>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         {errors.root && (
           <div style={{ color: "red", marginBottom: "1rem" }}>
             {errors.root.message}
@@ -61,7 +74,7 @@ export const LoginForm = () => {
             <input
               id="username"
               type="text"
-              {...register("username")}
+              {...form.register("username")}
               disabled={isLoading}
               autoComplete="username"
             />
@@ -77,7 +90,7 @@ export const LoginForm = () => {
             <input
               id="password"
               type="password"
-              {...register("password")}
+              {...form.register("password")}
               disabled={isLoading}
               autoComplete="current-password"
             />
