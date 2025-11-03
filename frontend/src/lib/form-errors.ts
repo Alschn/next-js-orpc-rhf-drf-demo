@@ -40,18 +40,23 @@ export function handleRHFApiValidationError<T extends FieldValues>(
 ) {
   if (error.type !== ApiErrorTypes.VALIDATION_ERROR) return;
   const validKeys = getFormFieldsFromValues(form.getValues());
-  for (const [key, value] of Object.entries(error)) {
-    let message;
-    if (Array.isArray(value)) {
-      message = value.join(", ");
+  const rootErrors: string[] = [];
+  for (const { detail, attr } of error.errors) {
+    let message = detail;
+    if (!attr || !validKeys.includes(attr)) {
+      if (!message.endsWith(".")) {
+        message += ".";
+      }
+      rootErrors.push(message);
     } else {
-      message = String(value);
+      form.setError(attr as FieldPath<T>, { type: "server", message });
     }
-    if (!validKeys.includes(key)) {
-      form.setError("root", { type: "server", message });
-    } else {
-      form.setError(key as FieldPath<T>, { type: "server", message });
-    }
+  }
+  if (rootErrors.length > 0) {
+    form.setError("root", {
+      type: "server",
+      message: rootErrors.join(" "),
+    });
   }
 }
 

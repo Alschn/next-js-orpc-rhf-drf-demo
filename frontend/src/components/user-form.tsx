@@ -1,12 +1,13 @@
 "use client";
 import { User, UserUpdateSchema } from "@/api/users/schema";
+import { handleRHFActionError } from "@/lib/form-errors";
 import { orpc } from "@/lib/orpc";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { isDefinedError } from "@orpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { toast } from "react-toastify";
 
 type UserFormData = z.infer<typeof UserUpdateSchema>;
 
@@ -15,13 +16,7 @@ interface UserFormProps {
 }
 
 export const UserForm = ({ initialData }: UserFormProps) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isDirty },
-    reset,
-    setError,
-  } = useForm<UserFormData>({
+  const form = useForm<UserFormData>({
     defaultValues: {
       first_name: initialData.first_name,
       last_name: initialData.last_name,
@@ -38,22 +33,17 @@ export const UserForm = ({ initialData }: UserFormProps) => {
         await queryClient.invalidateQueries({
           queryKey: orpc.users.key(),
         });
-        alert("User updated successfully");
+        toast.success("User updated successfully", {
+          position: "top-right",
+          autoClose: 1500,
+        });
       },
       onError: (error) => {
-        console.log("Error updating user: " + error.message);
-        if (!isDefinedError(error)) return;
-        if (error.data.type === "validation_error") {
-          const fieldErrors = error.data.errors.filter(
-            (e) => e.attr && e.attr in initialData,
-          );
-          for (const err of fieldErrors) {
-            setError(err.attr as keyof UserFormData, {
-              type: "server",
-              message: err.detail,
-            });
-          }
-        }
+        toast.error("Failed to update user.", {
+          position: "top-right",
+          autoClose: 2000,
+        });
+        handleRHFActionError(error, form);
       },
     }),
   );
@@ -63,10 +53,11 @@ export const UserForm = ({ initialData }: UserFormProps) => {
   };
 
   const handleReset = () => {
-    reset();
+    form.reset();
   };
 
   const isLoading = mutation.isPending;
+  const { errors, isDirty } = form.formState;
 
   return (
     <div>
@@ -86,14 +77,20 @@ export const UserForm = ({ initialData }: UserFormProps) => {
           <strong>Is Staff:</strong> {initialData.is_staff ? "Yes" : "No"}
         </p>
       </div>
-      <form onSubmit={handleSubmit(handleFormSubmit)}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)}>
+        {errors.root && (
+          <div style={{ color: "red", marginBottom: "1rem" }}>
+            {errors.root.message}
+          </div>
+        )}
+
         <div>
           <label htmlFor="first_name">
             First Name
             <input
               id="first_name"
               type="text"
-              {...register("first_name")}
+              {...form.register("first_name")}
               disabled={isLoading}
             />
           </label>
@@ -108,7 +105,7 @@ export const UserForm = ({ initialData }: UserFormProps) => {
             <input
               id="last_name"
               type="text"
-              {...register("last_name")}
+              {...form.register("last_name")}
               disabled={isLoading}
             />
           </label>
@@ -122,7 +119,7 @@ export const UserForm = ({ initialData }: UserFormProps) => {
             <input
               id="is_active"
               type="checkbox"
-              {...register("is_active")}
+              {...form.register("is_active")}
               disabled={isLoading}
             />
             Is Active
