@@ -1,6 +1,7 @@
 import "../lib/orpc.server";
 
 import type { Metadata } from "next";
+import { ToastContainer } from "react-toastify";
 import { QueryClientProvider } from "./providers";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <QueryClientProvider>{children}</QueryClientProvider>
+        <ToastContainer pauseOnFocusLoss={false} pauseOnHover={false} />
       </body>
     </html>
   );
