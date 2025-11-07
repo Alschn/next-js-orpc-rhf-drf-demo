@@ -44,7 +44,7 @@ const BaseParamsSchema = z.object({
 export const UserSchema = z.object({
   id: z.number().int(),
   username: z.string(),
-  email: z.email(),
+  email: z.email().or(z.literal("")),
   first_name: z.string(),
   last_name: z.string(),
   is_active: z.boolean(),
@@ -62,6 +62,7 @@ export const UserUpdateSchema = UserSchema.pick({
 export const UserListParamsSchema = BaseParamsSchema.extend({
   is_staff: z.boolean().optional(),
   is_active: z.boolean().optional(),
+  search: z.string().optional(),
 });
 
 export type UserListParams = z.infer<typeof UserListParamsSchema>;
