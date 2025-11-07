@@ -1,13 +1,14 @@
 "use client";
 
 import { Paginated, User, type UserListParams } from "@/api/users/schema";
+import { client, orpc } from "@/lib/orpc";
+import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import Link from "next/link";
-import { DataTable } from "./data-table";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { client, orpc } from "@/lib/orpc";
+import { DataTable } from "./data-table";
 import UsersListFilters from "./users-list-filters";
+import UsersListPagination from "./users-list-pagination";
 
 const UserColumnActions = ({ row }: { row: Row<User> }) => {
   return (
@@ -74,44 +75,19 @@ export const UsersList = ({ initialData, initialParams }: UsersListProps) => {
   });
 
   const data = useMemo(() => page?.results ?? [], [page]);
-
-  const { currentPage, pageCount } = useMemo(() => {
-    const count = page?.count ?? 0;
-    const currentPage =
-      Math.floor((queryParams.offset ?? 0) / queryParams.limit) + 1;
-    const pageCount = Math.ceil(count / queryParams.limit);
-    return { currentPage, pageCount };
-  }, [page, queryParams]);
+  const itemsCount = page?.count ?? 0;
 
   return (
     <div>
       <h1>Users</h1>
       <UsersListFilters onQueryParamsChange={setQueryParams} />
       <DataTable columns={columns} data={data} />
-      <div style={{ display: "flex", gap: "1rem" }}>
-        <span>
-          Page {currentPage} of {pageCount}
-        </span>
-        <label>
-          Page size:
-          <select
-            defaultValue={initialParams.limit}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-              setQueryParams((prev) => ({
-                ...prev,
-                limit: value,
-                offset: 0,
-              }));
-            }}
-          >
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-          </select>
-        </label>
-      </div>
+      <UsersListPagination
+        count={itemsCount}
+        offset={queryParams.offset}
+        limit={queryParams.limit}
+        onQueryParamsChange={setQueryParams}
+      />
     </div>
   );
 };
