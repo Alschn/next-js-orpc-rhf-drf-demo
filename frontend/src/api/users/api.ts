@@ -58,7 +58,7 @@ export class UsersAPI extends BaseAPI {
     return this.client.get<User>(url);
   }
 
-  async updateUser(id: User["id"], payload: unknown) {
+  async updateUser(id: User["id"], payload: Omit<Partial<User>, "id">) {
     const url = this.makeDetailPath(this.endpoints.USERS_DETAIL, id);
     return this.client.patch<User>(url, payload);
   }
