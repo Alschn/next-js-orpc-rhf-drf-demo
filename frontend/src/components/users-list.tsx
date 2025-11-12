@@ -1,7 +1,7 @@
 "use client";
 
 import { Paginated, User, type UserListParams } from "@/api/users/schema";
-import { client, orpc } from "@/lib/orpc";
+import { orpc } from "@/lib/orpc";
 import { useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import Link from "next/link";
@@ -64,15 +64,12 @@ interface UsersListProps {
 export const UsersList = ({ initialData, initialParams }: UsersListProps) => {
   const [queryParams, setQueryParams] = useState<UserListParams>(initialParams);
 
-  const { data: page } = useQuery({
-    queryKey: orpc.users.list.key({
+  const { data: page } = useQuery(
+    orpc.users.list.queryOptions({
       input: queryParams,
+      initialData,
     }),
-    queryFn: async () => {
-      return await client.users.list(queryParams);
-    },
-    initialData,
-  });
+  );
 
   const data = useMemo(() => page?.results ?? [], [page]);
   const itemsCount = page?.count ?? 0;
