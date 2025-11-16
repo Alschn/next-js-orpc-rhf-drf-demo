@@ -1,6 +1,6 @@
 # next-js-orpc-rhf-drf-demo
 
-Next.js frontend with oRPC, React Hook Form, Zod 
+Next.js frontend with oRPC, React Hook Form, Zod
 where typesafe oRPC endpoints proxy requests to Django Rest Framework backend.
 
 ## Setup
@@ -41,5 +41,10 @@ API_KEY_HEADER=X-Api-Key
 
 ### Frontend
 
-...
+Create a `.env` file in the root of the frontend directory with the following content:
 
+```dotenv
+USERS_API_URL=http://localhost:8000/api/v1/
+# needed only for internal endpoints
+USERS_API_KEY=your_api_key_here
+```
