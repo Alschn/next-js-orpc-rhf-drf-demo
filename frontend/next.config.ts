@@ -13,9 +13,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const config: NextConfig = {
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
