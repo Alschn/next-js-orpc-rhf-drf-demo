@@ -1,0 +1,44 @@
+[tool.poetry]
+name = "next-js-orpc-rhf-drf-demo"
+version = "0.1.0"
+description = "DRF Backend"
+authors = ["Alschn <67019937+Alschn@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+django = "^5.2.7"
+djangorestframework = "^3.16.1"
+djangorestframework-api-key = "^3.1.0"
+djangorestframework-simplejwt = "^5.5.1"
+drf-spectacular = "^0.29.0"
+drf-standardized-errors = "^0.15.0"
+django-cors-headers = "^4.9.0"
+django-extensions = "^4.1"
+django-filter = "^25.2"
+environs = "^14.5.0"
+django-storages = { extras = ["boto3"], version = "^1.14.6" }
+psycopg = { extras = ["binary", "pool"], version = "^3.2.12" }
+dj-database-url = "^3.0.1"
+gunicorn = "^23.0.0"
+
+[tool.poetry.group.dev.dependencies]
+coverage = "^7.11.0"
+freezegun = "^1.5.5"
+ruff = "^0.14.3"
+factory-boy = "^3.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.ruff]
+line-length = 120
+lint.ignore = ["F401", "F403"]
