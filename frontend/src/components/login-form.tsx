@@ -1,11 +1,10 @@
 "use client";
 
 import { TokenLoginPayloadSchema } from "@/api/users/schema";
+import { login } from "@/actions/auth";
 import { handleRHFActionError } from "@/lib/form-errors";
-import { login } from "@/routers/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { onError } from "@orpc/client";
-import { useServerAction } from "@orpc/react/hooks";
+import { useServerFunction } from "@orpc/next/hooks";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import z from "zod";
@@ -29,31 +28,28 @@ export const LoginForm = () => {
     resolver: zodResolver(TokenLoginPayloadSchema),
   });
 
-  const { execute, isPending: isLoading } = useServerAction(login, {
-    interceptors: [
-      onError((error) => {
-        handleRHFActionError(error, form, {
-          onUndefinedError: (err) => {
-            console.error("Unexpected error:", err.message);
-            toast.error("An unexpected error occurred.", {
-              position: "top-right",
-              autoClose: 3000,
-            });
-          },
-          onDefinedError: (error) => {
-            if (error.type === "validation_error") return;
-            toast.error(error.errors.map((e) => e.detail).join(", "), {
-              position: "top-right",
-              autoClose: 3000,
-            });
-          },
-        });
-      }),
-    ],
-  });
+  const { execute, isPending: isLoading } = useServerFunction(login);
 
-  const onSubmit = (data: LoginFormData) => {
-    execute(data);
+  // On success, the server function redirects, so only errors need handling here.
+  const onSubmit = async (data: LoginFormData) => {
+    const [error] = await execute(data);
+    if (!error) return;
+    handleRHFActionError(error, form, {
+      onUndefinedError: (err) => {
+        console.error("Unexpected error:", err.message);
+        toast.error("An unexpected error occurred.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      },
+      onDefinedError: (error) => {
+        if (error.type === "validation_error") return;
+        toast.error(error.errors.map((e) => e.detail).join(", "), {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      },
+    });
   };
 
   const { errors } = form.formState;

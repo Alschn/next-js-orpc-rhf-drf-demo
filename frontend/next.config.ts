@@ -13,9 +13,6 @@ const withBundleAnalyzer = bundleAnalyzer({
 
 const config: NextConfig = {
   reactStrictMode: true,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   experimental: {
     authInterrupts: true,
   },

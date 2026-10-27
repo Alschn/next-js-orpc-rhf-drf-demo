@@ -1,65 +1,53 @@
-"use server";
-
 import { PrivateUsersApi } from "@/api/users/api.server";
 import { TokenLoginPayloadSchema, TokenSchema } from "@/api/users/schema";
-import { clientWithErrors, remoteApiHandler } from "@/lib/orpc-errors";
+import {
+  clientWithErrors,
+  isRemoteServerErrorWithStatus,
+  remoteApiHandler,
+} from "@/lib/orpc-errors";
 import { decodeAccessToken, decodeRefreshToken } from "@/services/jwt";
-import { onSuccess } from "@orpc/server";
-import { cookies } from "next/headers";
-import { redirect, RedirectType } from "next/navigation";
+import { openapi } from "@orpc/openapi";
+import { getCookies } from "@/lib/next-request";
 
-const ACCESS_TOKEN_KEY = "access";
-const REFRESH_TOKEN_KEY = "refresh";
-const REDIRECT_TO_ON_LOGOUT = "/login";
+export const ACCESS_TOKEN_KEY = "access";
+export const REFRESH_TOKEN_KEY = "refresh";
 
 export const login = clientWithErrors
-  .route({
-    method: "POST",
-    path: "/auth/login",
-  })
+  .meta(openapi({ method: "POST", path: "/auth/login" }))
   .input(TokenLoginPayloadSchema)
   .output(TokenSchema)
   .handler(async ({ input, errors }) => {
-    return remoteApiHandler(PrivateUsersApi.tokenLogin(input), { errors });
-  })
-  .actionable({
-    interceptors: [
-      onSuccess(async (output) => {
-        const { access, refresh } = output;
-        const cookieStore = await cookies();
-        const accessToken = decodeAccessToken(access)!;
-        const refreshToken = decodeRefreshToken(refresh)!;
-        const accessMaxAge = accessToken.exp - accessToken.iat;
-        const refreshMaxAge = refreshToken.exp - refreshToken.iat;
-        cookieStore.set(ACCESS_TOKEN_KEY, access, {
-          httpOnly: true,
-          maxAge: accessMaxAge,
-        });
-        cookieStore.set(REFRESH_TOKEN_KEY, refresh, {
-          httpOnly: true,
-          maxAge: refreshMaxAge,
-        });
-        redirect("/", RedirectType.replace);
-      }),
-    ],
+    const tokens = await remoteApiHandler(PrivateUsersApi.tokenLogin(input), {
+      errors,
+    });
+    const cookieStore = await getCookies();
+    const accessToken = decodeAccessToken(tokens.access)!;
+    const refreshToken = decodeRefreshToken(tokens.refresh)!;
+    cookieStore.set(ACCESS_TOKEN_KEY, tokens.access, {
+      httpOnly: true,
+      maxAge: accessToken.exp - accessToken.iat,
+    });
+    cookieStore.set(REFRESH_TOKEN_KEY, tokens.refresh, {
+      httpOnly: true,
+      maxAge: refreshToken.exp - refreshToken.iat,
+    });
+    return tokens;
   });
 
 export const logout = clientWithErrors
-  .route({
-    method: "POST",
-    path: "/auth/logout",
-  })
+  .meta(openapi({ method: "POST", path: "/auth/logout" }))
   .handler(async ({ errors }) => {
-    // todo: handle no refresh token case
-    return remoteApiHandler(PrivateUsersApi.tokenLogout(), { errors });
-  })
-  .actionable({
-    interceptors: [
-      onSuccess(async () => {
-        const cookieStore = await cookies();
-        cookieStore.delete(ACCESS_TOKEN_KEY);
-        cookieStore.delete(REFRESH_TOKEN_KEY);
-        redirect(REDIRECT_TO_ON_LOGOUT);
-      }),
-    ],
+    const cookieStore = await getCookies();
+    // Without an access token there is no session to blacklist remotely.
+    // An expired / invalid one gets rejected with 401 - in both cases the user
+    // is logged out anyway, so we just clear the local session.
+    if (cookieStore.has(ACCESS_TOKEN_KEY)) {
+      try {
+        await remoteApiHandler(PrivateUsersApi.tokenLogout(), { errors });
+      } catch (error) {
+        if (!isRemoteServerErrorWithStatus(error, 401)) throw error;
+      }
+    }
+    cookieStore.delete(ACCESS_TOKEN_KEY);
+    cookieStore.delete(REFRESH_TOKEN_KEY);
   });

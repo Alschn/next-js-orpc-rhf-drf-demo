@@ -29,7 +29,13 @@ export const UserForm = ({ initialData }: UserFormProps) => {
 
   const mutation = useMutation(
     orpc.users.update.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (user) => {
+        // Saved values become the new baseline for `isDirty` and "Reset".
+        form.reset({
+          first_name: user.first_name,
+          last_name: user.last_name,
+          is_active: user.is_active,
+        });
         await queryClient.invalidateQueries({
           queryKey: orpc.users.key(),
         });

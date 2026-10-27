@@ -12,6 +12,14 @@ const UsersListFilters = ({
 }: {
   onQueryParamsChange: Dispatch<SetStateAction<UserListParams>>;
 }) => {
+  // Changing a filter changes the result set, so always start from the first page.
+  const setFilter = <K extends "search" | "is_active" | "is_staff">(
+    key: K,
+    value: UserListParams[K],
+  ) => {
+    onQueryParamsChange((prev) => ({ ...prev, [key]: value, offset: 0 }));
+  };
+
   return (
     <div style={{ display: "flex", gap: "1rem" }}>
       <label>
@@ -21,12 +29,7 @@ const UsersListFilters = ({
           name="search"
           placeholder="Search..."
           defaultValue=""
-          onChange={(e) =>
-            onQueryParamsChange((prev) => ({
-              ...prev,
-              search: e.target.value || undefined,
-            }))
-          }
+          onChange={(e) => setFilter("search", e.target.value || undefined)}
         />
       </label>
       <label>
@@ -34,13 +37,9 @@ const UsersListFilters = ({
         <select
           name="is_active"
           defaultValue=""
-          onChange={(e) => {
-            const value = e.target.value;
-            onQueryParamsChange((prev) => ({
-              ...prev,
-              is_active: selectValueToBoolean(value),
-            }));
-          }}
+          onChange={(e) =>
+            setFilter("is_active", selectValueToBoolean(e.target.value))
+          }
         >
           <option value="">All</option>
           <option value="true">Yes</option>
@@ -52,13 +51,9 @@ const UsersListFilters = ({
         <select
           name="is_staff"
           defaultValue=""
-          onChange={(e) => {
-            const value = e.target.value;
-            onQueryParamsChange((prev) => ({
-              ...prev,
-              is_active: selectValueToBoolean(value),
-            }));
-          }}
+          onChange={(e) =>
+            setFilter("is_staff", selectValueToBoolean(e.target.value))
+          }
         >
           <option value="">All</option>
           <option value="true">Yes</option>

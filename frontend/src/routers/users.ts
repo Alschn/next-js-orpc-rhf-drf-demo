@@ -6,12 +6,10 @@ import {
   UserUpdateSchema,
 } from "@/api/users/schema";
 import { clientWithErrors, remoteApiHandler } from "@/lib/orpc-errors";
+import { openapi } from "@orpc/openapi";
 
 export const listUsers = clientWithErrors
-  .route({
-    method: "GET",
-    path: "/users",
-  })
+  .meta(openapi({ method: "GET", path: "/users" }))
   .input(UserListParamsSchema)
   .output(PaginatedSchema(UserSchema))
   .handler(async ({ input, errors }) => {
@@ -19,10 +17,7 @@ export const listUsers = clientWithErrors
   });
 
 export const retrieveUser = clientWithErrors
-  .route({
-    method: "GET",
-    path: "/users/{id}",
-  })
+  .meta(openapi({ method: "GET", path: "/users/{id}" }))
   .input(UserSchema.pick({ id: true }))
   .output(UserSchema)
   .handler(async ({ input, errors }) => {
@@ -30,10 +25,7 @@ export const retrieveUser = clientWithErrors
   });
 
 export const updateUser = clientWithErrors
-  .route({
-    method: "PATCH",
-    path: "/users/{id}",
-  })
+  .meta(openapi({ method: "PATCH", path: "/users/{id}" }))
   .input(UserUpdateSchema.extend({ id: UserSchema.shape.id }))
   .output(UserSchema)
   .handler(async ({ input, errors }) => {

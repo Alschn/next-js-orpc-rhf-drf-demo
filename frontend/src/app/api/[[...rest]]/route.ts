@@ -1,56 +1,47 @@
 import { router } from "@/routers";
+import { ERROR_STATUS_MAP } from "@/lib/orpc-errors";
+import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { onError } from "@orpc/server";
-import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
-import { experimental_SmartCoercionPlugin as SmartCoercionPlugin } from "@orpc/json-schema";
-import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
+import { ZodToJsonSchemaConverter } from "@orpc/zod";
+import { SmartCoercionHandlerPlugin } from "@orpc/json-schema";
+import { OpenAPIReferenceHandlerPlugin } from "@orpc/openapi/plugins";
+
+const PREFIX = "/api";
+
+const generator = new OpenAPIGenerator({
+  converters: [new ZodToJsonSchemaConverter()],
+});
 
 const openAPIHandler = new OpenAPIHandler(router, {
+  errorStatusMap: ERROR_STATUS_MAP,
   interceptors: [
     onError((error) => {
       console.error(error);
     }),
   ],
   plugins: [
-    new SmartCoercionPlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
+    new SmartCoercionHandlerPlugin({
+      converters: [new ZodToJsonSchemaConverter()],
     }),
-    new OpenAPIReferencePlugin({
-      schemaConverters: [new ZodToJsonSchemaConverter()],
-      specGenerateOptions: {
-        info: {
-          title: "ORPC Playground",
-          version: "1.0.0",
-        },
-        commonSchemas: {
-          UndefinedError: { error: "UndefinedError" },
-        },
-        security: [{ bearerAuth: [] }],
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: "http",
-              scheme: "bearer",
+    new OpenAPIReferenceHandlerPlugin({
+      spec: () =>
+        generator.generate(router, {
+          base: {
+            info: {
+              title: "ORPC Playground",
+              version: "1.0.0",
             },
+            servers: [{ url: PREFIX }],
           },
-        },
-      },
-      docsConfig: {
-        authentication: {
-          securitySchemes: {
-            bearerAuth: {
-              token: "default-token",
-            },
-          },
-        },
-      },
+        }),
     }),
   ],
 });
 
 async function handleRequest(request: Request) {
   const { response } = await openAPIHandler.handle(request, {
-    prefix: "/api",
+    prefix: PREFIX,
     context: {},
   });
 

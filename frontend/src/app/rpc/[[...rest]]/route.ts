@@ -1,9 +1,11 @@
 import { router } from "@/routers";
+import { ERROR_STATUS_MAP } from "@/lib/orpc-errors";
 import { onError } from "@orpc/server";
 import { BatchHandlerPlugin } from "@orpc/server/plugins";
 import { RPCHandler } from "@orpc/server/fetch";
 
 const rpcHandler = new RPCHandler(router, {
+  errorStatusMap: ERROR_STATUS_MAP,
   interceptors: [
     onError((error) => {
       console.error(error);
