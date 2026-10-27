@@ -2,7 +2,7 @@
 
 import { Paginated, User, type UserListParams } from "@/api/users/schema";
 import { orpc } from "@/lib/orpc";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ColumnDef, Row } from "@tanstack/react-table";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -67,7 +67,10 @@ export const UsersList = ({ initialData, initialParams }: UsersListProps) => {
   const { data: page } = useQuery(
     orpc.users.list.queryOptions({
       input: queryParams,
-      initialData,
+      // Server-rendered data belongs to the initial params only, otherwise it would be
+      // shown (as fresh) for every new filter / page combination.
+      initialData: queryParams === initialParams ? initialData : undefined,
+      placeholderData: keepPreviousData,
     }),
   );
 

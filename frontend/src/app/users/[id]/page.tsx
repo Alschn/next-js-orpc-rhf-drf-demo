@@ -1,6 +1,8 @@
 import { UserForm } from "@/components/user-form";
 import { client } from "@/lib/orpc";
-import { safe } from "@orpc/server";
+import { throwPageError } from "@/lib/page-errors";
+import { safe } from "@orpc/client";
+import { notFound } from "next/navigation";
 
 interface UserPageProps {
   params: Promise<{ id: string }>;
@@ -10,13 +12,13 @@ export default async function UserPage({ params }: UserPageProps) {
   const { id } = await params;
   const userId = Number.parseInt(id, 10);
   if (Number.isNaN(userId)) {
-    return <div>Invalid user ID</div>;
+    notFound();
   }
 
   const { error, data } = await safe(client.users.retrieve({ id: userId }));
 
   if (error) {
-    return <pre>{JSON.stringify(error, null, 2)}</pre>;
+    throwPageError(error);
   }
 
   return <UserForm initialData={data} />;

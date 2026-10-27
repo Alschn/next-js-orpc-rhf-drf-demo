@@ -1,3 +1,4 @@
+import { UserListParams } from "@/api/users/schema";
 import { useCallback, useMemo, Dispatch, SetStateAction } from "react";
 
 const UsersListPagination = ({
@@ -9,29 +10,27 @@ const UsersListPagination = ({
   count: number;
   offset: number;
   limit: number;
-  onQueryParamsChange: Dispatch<
-    SetStateAction<{ offset: number; limit: number }>
-  >;
+  onQueryParamsChange: Dispatch<SetStateAction<UserListParams>>;
 }) => {
   const { currentPage, pageCount } = useMemo(() => {
-    const currentPage = Math.floor((offset ?? 0) / limit) + 1;
-    const pageCount = Math.ceil(count / limit);
+    const currentPage = Math.floor(offset / limit) + 1;
+    const pageCount = Math.max(Math.ceil(count / limit), 1);
     return { currentPage, pageCount };
   }, [count, offset, limit]);
 
   const handlePrevious = useCallback(() => {
     onQueryParamsChange((prev) => ({
       ...prev,
-      offset: Math.max((prev.offset ?? 0) - prev.limit, 0),
+      offset: Math.max(prev.offset - prev.limit, 0),
     }));
   }, [onQueryParamsChange]);
 
   const handleNext = useCallback(() => {
     onQueryParamsChange((prev) => ({
       ...prev,
-      offset: Math.min((prev.offset ?? 0) + prev.limit, pageCount - 1),
+      offset: Math.min(prev.offset + prev.limit, (pageCount - 1) * prev.limit),
     }));
-  }, [pageCount]);
+  }, [onQueryParamsChange, pageCount]);
 
   const handlePageSizeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {

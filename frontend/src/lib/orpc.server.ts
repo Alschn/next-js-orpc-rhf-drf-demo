@@ -1,13 +1,12 @@
-import "server-only";
-
 import { router } from "@/routers";
 import { createRouterClient } from "@orpc/server";
-import { headers } from "next/headers";
+import { getHeaders } from "./next-request";
 
 /**
- * This is part of the Optimize SSR setup.
+ * This is part of the Optimize SSR setup. Do not add `import "server-only"` here,
+ * it would fail the build - `lib/orpc.ts` imports this file only on the server.
  *
- * @see {@link https://orpc.unnoq.com/docs/adapters/next#optimize-ssr}
+ * @see {@link https://orpc.dev/docs/adapters/next#optimize-ssr}
  */
 globalThis.$client = createRouterClient(router, {
   /**
@@ -18,6 +17,6 @@ globalThis.$client = createRouterClient(router, {
    * For per-request context, use middleware context or pass a function as the initial context.
    */
   context: async () => ({
-    headers: await headers(), // provide headers if initial context required
+    headers: await getHeaders(), // provide headers if initial context required
   }),
 });

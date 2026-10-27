@@ -1,8 +1,8 @@
 import { ApiErrorTypes } from "@/api/common/errors";
 import { isDefinedError, ORPCError } from "@orpc/client";
 import { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
+import { isNextNavigationError } from "./next-errors";
 import { RemoteServerErrorData } from "./orpc-errors";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export function getFormFieldsFromValues<T extends Record<string, any>>(
   formValues: T,
@@ -77,9 +77,7 @@ export function handleRHFActionError<T extends FieldValues>(
   form: UseFormReturn<T>,
   options?: HandleRHFActionErrorOptions<T>,
 ) {
-  // oRPC onError interceptor also catches internal Next.js errors such as form action redirects,
-  // we should ignore those, as they are an expected behaviour, not errors per se.
-  if (isRedirectError(error)) return;
+  if (isNextNavigationError(error)) return;
 
   if (!isDefinedError(error)) {
     options?.onUndefinedError?.(error);
